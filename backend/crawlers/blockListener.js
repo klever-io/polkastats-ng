@@ -8,7 +8,7 @@ const {
     wait,
     shortHash,
     processExtrinsics,
-    processEvents,
+    // processEvents,
     processLogs,
     getDisplayName,
     updateFinalized,
@@ -184,13 +184,13 @@ const crawler = async () => {
                         blockEvents,
                     ),
                     // Store module events
-                    processEvents(
-                        client,
-                        blockNumber,
-                        blockEvents,
-                        timestamp,
-                        loggerOptions,
-                    ),
+                    // processEvents(
+                    //     client,
+                    //     blockNumber,
+                    //     blockEvents,
+                    //     timestamp,
+                    //     loggerOptions,
+                    // ),
                     // Store block logs
                     processLogs(
                         client,

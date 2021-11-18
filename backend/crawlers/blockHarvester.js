@@ -7,7 +7,7 @@ const {
   isNodeSynced,
   shortHash,
   processExtrinsics,
-  processEvents,
+  // processEvents,
   processLogs,
   getDisplayName,
   wait,
@@ -111,13 +111,13 @@ const harvestBlock = async (api, client, blockNumber) => {
       loggerOptions,
     );
     // Store module events (async)
-    processEvents(
-      client,
-      blockNumber,
-      blockEvents,
-      timestamp,
-      loggerOptions,
-    );
+    // processEvents(
+    //   client,
+    //   blockNumber,
+    //   blockEvents,
+    //   timestamp,
+    //   loggerOptions,
+    // );
     // Store block logs (async)
     processLogs(
       client,

@@ -7,7 +7,7 @@ const { Client } = require('pg');
 const _ = require('lodash');
 const fs = require('fs');
 const config = require('../backend.config');
-
+const { typesBundlePre900 } = require("moonbeam-types-bundle");
 const logger = pino();
 
 module.exports = {
@@ -15,12 +15,8 @@ module.exports = {
     let api;
     logger.debug(loggerOptions, `Connecting to ${config.wsProviderUrl}`);
     const provider = new WsProvider(config.wsProviderUrl);
-    if (apiCustomTypes && apiCustomTypes !== '') {
-      const types = JSON.parse(fs.readFileSync(`./types/${apiCustomTypes}`, 'utf8'));
-      api = await ApiPromise.create({ provider, types });
-    } else {
-      api = await ApiPromise.create({ provider });
-    }
+    // const types = JSON.parse(fs.readFileSync(`./types/moonriver_custom_types.json`, 'utf8'));
+    api = await ApiPromise.create({ provider, typesBundle: typesBundlePre900 });
     await api.isReady;
     return api;
   },
@@ -68,9 +64,9 @@ module.exports = {
   isValidAddressPolkadotAddress: (address) => {
     try {
       encodeAddress(
-        isHex(address)
-          ? hexToU8a(address.toString())
-          : decodeAddress(address),
+          isHex(address)
+              ? hexToU8a(address.toString())
+              : decodeAddress(address),
       );
       return true;
     } catch (error) {
@@ -81,20 +77,20 @@ module.exports = {
     const startTime = new Date().getTime();
     const involvedAddresses = [];
     blockEvents
-      .forEach(({ event }) => {
-        event.data.forEach((arg) => {
-          if (module.exports.isValidAddressPolkadotAddress(arg)) {
-            involvedAddresses.push(arg);
-          }
+        .forEach(({ event }) => {
+          event.data.forEach((arg) => {
+            if (module.exports.isValidAddressPolkadotAddress(arg)) {
+              involvedAddresses.push(arg);
+            }
+          });
         });
-      });
     const uniqueAddresses = _.uniq(involvedAddresses);
     await Promise.all(
-      uniqueAddresses.map(
-        (address) => module.exports.updateAccountInfo(
-          api, client, blockNumber, timestamp, address, loggerOptions,
+        uniqueAddresses.map(
+            (address) => module.exports.updateAccountInfo(
+                api, client, blockNumber, timestamp, address, loggerOptions,
+            ),
         ),
-      ),
     );
     // Log execution time
     const endTime = new Date().getTime();
@@ -116,18 +112,18 @@ module.exports = {
     const sql = `
       INSERT INTO   account (account_id, identity, identity_display, identity_display_parent, balances, available_balance, free_balance, locked_balance, nonce, timestamp, block_height)
       VALUES        ('${address}', '${JSONIdentity}', '${identityDisplay}', '${identityDisplayParent}', '${JSONbalances}', '${availableBalance}', '${freeBalance}', '${lockedBalance}', '${nonce}', '${timestamp}', '${blockNumber}')
-      ON CONFLICT   (account_id)
+        ON CONFLICT   (account_id)
       DO UPDATE
-      SET           identity = EXCLUDED.identity,
-                    identity_display = EXCLUDED.identity_display,
-                    identity_display_parent = EXCLUDED.identity_display_parent,
-                    balances = EXCLUDED.balances,
-                    available_balance = EXCLUDED.available_balance,
-                    free_balance = EXCLUDED.free_balance,
-                    locked_balance = EXCLUDED.locked_balance,
-                    nonce = EXCLUDED.nonce,
-                    timestamp = EXCLUDED.timestamp,
-                    block_height = EXCLUDED.block_height;
+                   SET           identity = EXCLUDED.identity,
+                   identity_display = EXCLUDED.identity_display,
+                   identity_display_parent = EXCLUDED.identity_display_parent,
+                   balances = EXCLUDED.balances,
+                   available_balance = EXCLUDED.available_balance,
+                   free_balance = EXCLUDED.free_balance,
+                   locked_balance = EXCLUDED.locked_balance,
+                   nonce = EXCLUDED.nonce,
+                   timestamp = EXCLUDED.timestamp,
+                   block_height = EXCLUDED.block_height;
     `;
     try {
       // eslint-disable-next-line no-await-in-loop
@@ -138,43 +134,43 @@ module.exports = {
     }
   },
   processExtrinsics: async (
-    api,
-    client,
-    blockNumber,
-    blockHash,
-    extrinsics,
-    blockEvents,
-    timestamp,
-    loggerOptions,
+      api,
+      client,
+      blockNumber,
+      blockHash,
+      extrinsics,
+      blockEvents,
+      timestamp,
+      loggerOptions,
   ) => {
     const startTime = new Date().getTime();
     await Promise.all(
-      extrinsics.map((extrinsic, index) => module.exports.processExtrinsic(
-        api,
-        client,
-        blockNumber,
-        blockHash,
-        extrinsic,
-        index,
-        blockEvents,
-        timestamp,
-        loggerOptions,
-      )),
+        extrinsics.map((extrinsic, index) => module.exports.processExtrinsic(
+            api,
+            client,
+            blockNumber,
+            blockHash,
+            extrinsic,
+            index,
+            blockEvents,
+            timestamp,
+            loggerOptions,
+        )),
     );
     // Log execution time
     const endTime = new Date().getTime();
     logger.debug(loggerOptions, `Added ${extrinsics.length} extrinsics in ${((endTime - startTime) / 1000).toFixed(3)}s`);
   },
   processExtrinsic: async (
-    api,
-    client,
-    blockNumber,
-    blockHash,
-    extrinsic,
-    index,
-    blockEvents,
-    timestamp,
-    loggerOptions,
+      api,
+      client,
+      blockNumber,
+      blockHash,
+      extrinsic,
+      index,
+      blockEvents,
+      timestamp,
+      loggerOptions,
   ) => {
     const { isSigned } = extrinsic;
     const signer = isSigned ? extrinsic.signer.toString() : '';
@@ -225,11 +221,11 @@ module.exports = {
     if (isSigned) {
       [feeInfo, feeDetails] = await Promise.all([
         api.rpc.payment.queryInfo(extrinsic.toHex(), blockHash)
-          .then((result) => JSON.stringify(result.toJSON()))
-          .catch((error) => logger.debug(loggerOptions, `API Error: ${error}`)) || '',
+            .then((result) => JSON.stringify(result.toJSON()))
+            .catch((error) => logger.debug(loggerOptions, `API Error: ${error}`)) || '',
         api.rpc.payment.queryFeeDetails(extrinsic.toHex(), blockHash)
-          .then((result) => JSON.stringify(result.toJSON()))
-          .catch((error) => logger.debug(loggerOptions, `API Error: ${error}`)) || '',
+            .then((result) => JSON.stringify(result.toJSON()))
+            .catch((error) => logger.debug(loggerOptions, `API Error: ${error}`)) || '',
       ]);
     }
 
@@ -262,7 +258,7 @@ module.exports = {
         '${success}',
         '${timestamp}'
       )
-      ON CONFLICT ON CONSTRAINT extrinsic_pkey 
+      ON CONFLICT ON CONSTRAINT extrinsic_pkey
       DO NOTHING;
       ;`;
     try {
@@ -273,20 +269,20 @@ module.exports = {
     }
   },
   processEvents: async (
-    client, blockNumber, blockEvents, timestamp, loggerOptions,
+      client, blockNumber, blockEvents, timestamp, loggerOptions,
   ) => {
     const startTime = new Date().getTime();
     await Promise.all(
-      blockEvents.map((record, index) => module.exports.processEvent(
-        client, blockNumber, record, index, timestamp, loggerOptions,
-      )),
+        blockEvents.map((record, index) => module.exports.processEvent(
+            client, blockNumber, record, index, timestamp, loggerOptions,
+        )),
     );
     // Log execution time
     const endTime = new Date().getTime();
     logger.debug(loggerOptions, `Added ${blockEvents.length} events in ${((endTime - startTime) / 1000).toFixed(3)}s`);
   },
   processEvent: async (
-    client, blockNumber, record, index, timestamp, loggerOptions,
+      client, blockNumber, record, index, timestamp, loggerOptions,
   ) => {
     const { event, phase } = record;
     const sql = `INSERT INTO event (
@@ -306,7 +302,7 @@ module.exports = {
       '${JSON.stringify(event.data)}',
       '${timestamp}'
     )
-    ON CONFLICT ON CONSTRAINT event_pkey 
+    ON CONFLICT ON CONSTRAINT event_pkey
     DO NOTHING
     ;`;
     try {
@@ -320,9 +316,9 @@ module.exports = {
   processLogs: async (client, blockNumber, logs, timestamp, loggerOptions) => {
     const startTime = new Date().getTime();
     await Promise.all(
-      logs.map((log, index) => module.exports.processLog(
-        client, blockNumber, log, index, timestamp, loggerOptions,
-      )),
+        logs.map((log, index) => module.exports.processLog(
+            client, blockNumber, log, index, timestamp, loggerOptions,
+        )),
     );
     // Log execution time
     const endTime = new Date().getTime();
@@ -346,7 +342,7 @@ module.exports = {
         '${data}',
         '${timestamp}'
       )
-      ON CONFLICT ON CONSTRAINT log_pkey 
+      ON CONFLICT ON CONSTRAINT log_pkey
       DO NOTHING;
       ;`;
     try {
@@ -365,9 +361,9 @@ module.exports = {
     blockEvents.forEach((record) => {
       const { event, phase } = record;
       if (
-        parseInt(phase.toHuman().ApplyExtrinsic, 10) === index
-        && event.section === 'system'
-        && event.method === 'ExtrinsicSuccess'
+          parseInt(phase.toHuman().ApplyExtrinsic, 10) === index
+          && event.section === 'system'
+          && event.method === 'ExtrinsicSuccess'
       ) {
         extrinsicSuccess = true;
       }
@@ -376,10 +372,10 @@ module.exports = {
   },
   getDisplayName: (identity) => {
     if (
-      identity.displayParent
-      && identity.displayParent !== ''
-      && identity.display
-      && identity.display !== ''
+        identity.displayParent
+        && identity.displayParent !== ''
+        && identity.display
+        && identity.display !== ''
     ) {
       return `${identity.displayParent} / ${identity.display}`;
     }
@@ -458,7 +454,7 @@ module.exports = {
       VALUES
         ($1, $2, $3)
       ON CONFLICT ON CONSTRAINT
-        harvest_error_pkey 
+        harvest_error_pkey
         DO NOTHING
       ;`;
     await module.exports.dbParamQuery(client, query, data, loggerOptions);

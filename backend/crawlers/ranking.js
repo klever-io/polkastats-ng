@@ -350,7 +350,7 @@ const insertRankingValidator = async (client, validator, blockHeight, startTime)
     `${validator.commission}`,
     `${JSON.stringify(validator.commissionHistory)}`,
     `${validator.commissionRating}`,
-    `${validator.activeEras}`,
+    ``,
     `${JSON.stringify(validator.eraPointsHistory)}`,
     `${validator.eraPointsPercent}`,
     `${validator.eraPointsRating}`,
@@ -609,10 +609,10 @@ const crawler = async (delayedStart) => {
     const withActive = false;
 
     logger.debug(loggerOptions, 'Step #1');
-    const [erasHistoric, chainCurrentEra, chainActiveEra] = await Promise.all([
+    const [erasHistoric, chainCurrentEra] = await Promise.all([
       api.derive.staking.erasHistoric(withActive),
       api.query.staking.currentEra(),
-      api.query.staking.activeEra(),
+      // api.query.staking.activeEra(),
     ]);
     const eraIndexes = erasHistoric.slice(
       Math.max(erasHistoric.length - config.historySize, 0),
@@ -722,7 +722,7 @@ const crawler = async (delayedStart) => {
     const waitingValidatorCount = waitingInfo.info.length;
     const nominatorCount = nominators.length;
     const currentEra = chainCurrentEra.toString();
-    const activeEra = JSON.parse(JSON.stringify(chainActiveEra)).index;
+    // const activeEra = JSON.parse(JSON.stringify(chainActiveEra)).index;
 
     // minimun stake
     logger.debug(loggerOptions, 'Finding minimum stake');
@@ -741,7 +741,7 @@ const crawler = async (delayedStart) => {
     logger.debug(loggerOptions, `${waitingValidatorCount} waiting validators`);
     logger.debug(loggerOptions, `${nominatorCount} nominators`);
     logger.debug(loggerOptions, `Current era is ${currentEra}`);
-    logger.debug(loggerOptions, `Active era is ${activeEra}`);
+    // logger.debug(loggerOptions, `Active era is ${activeEra}`);
     logger.debug(loggerOptions, `Minimum amount to stake is ${minimumStake}`);
 
     await Promise.all([
@@ -765,11 +765,11 @@ const crawler = async (delayedStart) => {
         `UPDATE total SET count = '${currentEra}' WHERE name = 'current_era'`,
         loggerOptions,
       ),
-      dbQuery(
-        client,
-        `UPDATE total SET count = '${activeEra}' WHERE name = 'active_era'`,
-        loggerOptions,
-      ),
+      // dbQuery(
+      //   client,
+      //   `UPDATE total SET count = '${activeEra}' WHERE name = 'active_era'`,
+      //   loggerOptions,
+      // ),
       dbQuery(
         client,
         `UPDATE total SET count = '${minimumStake}' WHERE name = 'minimum_stake'`,

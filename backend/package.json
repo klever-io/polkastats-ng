@@ -28,7 +28,8 @@
     "pg": "^8.6.0",
     "pg-format": "^1.0.4",
     "pg-native": "^3.0.0",
-    "pino": "^6.7.0"
+    "pino": "^6.7.0",
+    "moonbeam-types-bundle": "^2.0.1"
   },
   "devDependencies": {
     "eslint": "^7.18.0",

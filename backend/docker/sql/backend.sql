@@ -250,6 +250,24 @@ GRANT ALL PRIVILEGES ON TABLE featured TO polkastats;
 GRANT ALL PRIVILEGES ON TABLE account TO polkastats;
 GRANT ALL PRIVILEGES ON TABLE total TO polkastats;
 
+CREATE TABLE transactions(block_number integer, hash text, signer text, data text, args text, method text, success boolean, timestamp bigint, phase text, fee_details text);
+
+CREATE OR REPLACE FUNCTION public.gettransaction(text)
+ RETURNS SETOF transactions
+ LANGUAGE sql
+ STABLE
+AS $function$
+((SELECT block_number, hash, signer, NULL, args, method, success, "timestamp", NULL, fee_details FROM extrinsic 
+WHERE signer=$1 
+OR args LIKE CONCAT('%', $1, '%') AND method IN('transferKeepAlive','transfer'))
+UNION ALL
+(SELECT block_number, NULL, NULL, data, NULL, method, NULL, "timestamp", phase, NULL  FROM event WHERE method IN('Reward','Rewarded') AND data LIKE CONCAT('%', $1, '%')))
+$function$
+
+CREATE EXTENSION pg_trgm;
+
+CREATE INDEX event_data_idx_gin ON event USING gin (data gin_trgm_ops);
+
 --
 -- Fast counters
 --
